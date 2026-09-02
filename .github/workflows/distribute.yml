@@ -29,9 +29,6 @@ jobs:
           sudo xcode-select -s "/Applications/$LATEST"
           xcodebuild -version
 
-      - name: Decode GoogleService-Info.plist
-        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 --decode > Tinodios/GoogleService-Info.plist
-
       - name: Pod install
         run: pod install --repo-update
 
@@ -71,7 +68,7 @@ jobs:
           IPA=$(find . -maxdepth 1 -name "*.ipa" | head -1)
           echo "Distributing $IPA"
           npx -y firebase-tools appdistribution:distribute "$IPA" \
-            --app "${{ secrets.FIREBASE_IOS_APP_ID }}" \
-            --project "${{ secrets.FIREBASE_PROJECT_ID }}" \
-            --testers "${{ secrets.TESTER_EMAIL }}" \
+            --app 1:656202089228:ios:41b36481da9ef970e23f29 \
+            --project chatapp-48786 \
+            --testers "namigmustafa@gmail.com" \
             --release-notes "Tinode iOS POC build (commit ${{ github.sha }})"
