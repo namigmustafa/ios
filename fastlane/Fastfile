@@ -56,6 +56,7 @@ platform :ios do
       adhoc: true,
       skip_certificate_verification: true,
       force: true,
+      cert_id: "YB52DSFB37",
       filename: "ext.mobileprovision",
     )
     ext_profile = lane_context[SharedValues::SIGH_NAME]
