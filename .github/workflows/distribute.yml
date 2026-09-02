@@ -1,0 +1,77 @@
+name: Tinode iOS POC → Build & Distribute
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_device_udid:
+        description: 'UDID of a new tester device to register (leave empty to skip)'
+        required: false
+  push:
+    branches: [master, main]
+
+jobs:
+  distribute:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Select latest Xcode
+        run: |
+          LATEST=$(ls /Applications/ | grep '^Xcode_' | sort -t_ -k2 -V | tail -1)
+          sudo xcode-select -s "/Applications/$LATEST"
+          xcodebuild -version
+
+      - name: Decode GoogleService-Info.plist
+        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 --decode > Tinodios/GoogleService-Info.plist
+
+      - name: Pod install
+        run: pod install --repo-update
+
+      - name: Setup App Store Connect API key
+        run: |
+          mkdir -p ~/.private_keys
+          echo "${{ secrets.ASC_PRIVATE_KEY }}" > ~/.private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+
+      - name: Decode distribution certificate
+        run: echo "${{ secrets.DIST_CERT_P12_BASE64 }}" | base64 --decode > distribution.p12
+
+      - name: Bump build number
+        run: |
+          sed -i '' "s/^GIT_COMMIT_COUNT = .*/GIT_COMMIT_COUNT = ${{ github.run_number }}/" prod.xcconfig
+
+      - name: Build & sign (ad-hoc)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          DIST_CERT_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}
+          TEST_DEVICE_UDID: ${{ github.event.inputs.test_device_udid }}
+        run: bundle exec fastlane adhoc
+
+      - name: Setup Node.js (for firebase-tools)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Distribute via Firebase App Distribution
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          IPA=$(find . -maxdepth 1 -name "*.ipa" | head -1)
+          echo "Distributing $IPA"
+          npx -y firebase-tools appdistribution:distribute "$IPA" \
+            --app "${{ secrets.FIREBASE_IOS_APP_ID }}" \
+            --project "${{ secrets.FIREBASE_PROJECT_ID }}" \
+            --testers "${{ secrets.TESTER_EMAIL }}" \
+            --release-notes "Tinode iOS POC build (commit ${{ github.sha }})"

@@ -6,12 +6,12 @@
 #include "Pods/Target Support Files/Pods-Tinodios/Pods-Tinodios.release.xcconfig"
 
 // Server URL
-HOST_NAME = api.tinode.co
+HOST_NAME = tinodepoc-app.ashyisland-a259862f.northeurope.azurecontainerapps.io
 // Use TLS (https, wss)
 USE_TLS = YES
 
 // App Settings
-APP_NAME = Tinode
+APP_NAME = Tinode (POC)
 
 // Versioning. The values are automatically updated by a build script.
 GIT_TAG = 1.24.3

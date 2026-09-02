@@ -1,0 +1,96 @@
+default_platform(:ios)
+
+platform :ios do
+  lane :adhoc do
+    keychain_name = "build.keychain"
+    keychain_password = "ci_temp_password"
+
+    create_keychain(
+      name: keychain_name,
+      password: keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      add_to_search_list: true,
+    )
+
+    import_certificate(
+      certificate_path: "distribution.p12",
+      certificate_password: ENV["DIST_CERT_PASSWORD"],
+      keychain_path: File.expand_path("~/Library/Keychains/#{keychain_name}-db"),
+      keychain_password: keychain_password,
+    )
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_PRIVATE_KEY"],
+    )
+
+    # Both bundle IDs (app.chatapp.p2p.tinode and its .NSExtension child) must be
+    # registered manually at developer.apple.com/account/resources/identifiers/list
+    # before the first run: main ID with Push Notifications + App Groups enabled,
+    # extension ID with App Groups enabled, both using the same
+    # group.app.chatapp.p2p.tinode.db application group.
+    if ENV["TEST_DEVICE_UDID"] && !ENV["TEST_DEVICE_UDID"].empty?
+      register_devices(
+        api_key: api_key,
+        devices: { "Tester device" => ENV["TEST_DEVICE_UDID"] },
+      )
+    end
+
+    get_provisioning_profile(
+      api_key: api_key,
+      app_identifier: "app.chatapp.p2p.tinode",
+      adhoc: true,
+      skip_certificate_verification: true,
+      force: true,
+      filename: "app.mobileprovision",
+    )
+    app_profile = lane_context[SharedValues::SIGH_NAME]
+
+    get_provisioning_profile(
+      api_key: api_key,
+      app_identifier: "app.chatapp.p2p.tinode.NSExtension",
+      adhoc: true,
+      skip_certificate_verification: true,
+      force: true,
+      filename: "ext.mobileprovision",
+    )
+    ext_profile = lane_context[SharedValues::SIGH_NAME]
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Tinodios.xcodeproj",
+      team_id: ENV["APPLE_TEAM_ID"],
+      targets: ["Tinodios"],
+      bundle_identifier: "app.chatapp.p2p.tinode",
+      code_sign_identity: "Apple Distribution",
+      profile_name: app_profile,
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Tinodios.xcodeproj",
+      team_id: ENV["APPLE_TEAM_ID"],
+      targets: ["TinodiosNSExtension"],
+      bundle_identifier: "app.chatapp.p2p.tinode.NSExtension",
+      code_sign_identity: "Apple Distribution",
+      profile_name: ext_profile,
+    )
+
+    build_app(
+      workspace: "Tinodios.xcworkspace",
+      scheme: "Tinodios",
+      export_method: "ad-hoc",
+      configuration: "Release",
+      export_options: {
+        method: "ad-hoc",
+        provisioningProfiles: {
+          "app.chatapp.p2p.tinode" => app_profile,
+          "app.chatapp.p2p.tinode.NSExtension" => ext_profile,
+        },
+      },
+    )
+  end
+end
