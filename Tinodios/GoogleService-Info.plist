@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>656202089228-1137mqv93arn6t1n3af51640pebiq9g4.apps.googleusercontent.com</string>
+	<string>656202089228-jssfbqn1le2krceiet1ar9iu8ptdbdvs.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.656202089228-1137mqv93arn6t1n3af51640pebiq9g4</string>
+	<string>com.googleusercontent.apps.656202089228-jssfbqn1le2krceiet1ar9iu8ptdbdvs</string>
 	<key>API_KEY</key>
 	<string>AIzaSyAyozRKHlrpbInlcRBsJ1eosu_NUgc-6mU</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>app.chatapp.p2p.calltest</string>
+	<string>app.chatapp.p2p.tinode</string>
 	<key>PROJECT_ID</key>
 	<string>chatapp-48786</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,7 +29,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:656202089228:ios:41b36481da9ef970e23f29</string>
+	<string>1:656202089228:ios:5dd6fc8811328763e23f29</string>
 	<key>DATABASE_URL</key>
 	<string>https://chatapp-48786-default-rtdb.firebaseio.com</string>
 </dict>

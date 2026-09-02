@@ -68,7 +68,7 @@ jobs:
           IPA=$(find . -maxdepth 1 -name "*.ipa" | head -1)
           echo "Distributing $IPA"
           npx -y firebase-tools appdistribution:distribute "$IPA" \
-            --app 1:656202089228:ios:41b36481da9ef970e23f29 \
+            --app 1:656202089228:ios:5dd6fc8811328763e23f29 \
             --project chatapp-48786 \
             --testers "namigmustafa@gmail.com" \
             --release-notes "Tinode iOS POC build (commit ${{ github.sha }})"

@@ -27,11 +27,11 @@ platform :ios do
       key_content: ENV["ASC_PRIVATE_KEY"],
     )
 
-    # Both bundle IDs (app.chatapp.p2p.calltest and its .NSExtension child) must be
+    # Both bundle IDs (app.chatapp.p2p.tinode and its .NSExtension child) must be
     # registered manually at developer.apple.com/account/resources/identifiers/list
     # before the first run: main ID with Push Notifications + App Groups enabled,
     # extension ID with App Groups enabled, both using the same
-    # group.app.chatapp.p2p.calltest.db application group.
+    # group.app.chatapp.p2p.tinode.db application group.
     if ENV["TEST_DEVICE_UDID"] && !ENV["TEST_DEVICE_UDID"].empty?
       register_devices(
         api_key: api_key,
@@ -41,7 +41,7 @@ platform :ios do
 
     get_provisioning_profile(
       api_key: api_key,
-      app_identifier: "app.chatapp.p2p.calltest",
+      app_identifier: "app.chatapp.p2p.tinode",
       adhoc: true,
       skip_certificate_verification: true,
       force: true,
@@ -52,7 +52,7 @@ platform :ios do
 
     get_provisioning_profile(
       api_key: api_key,
-      app_identifier: "app.chatapp.p2p.calltest.NSExtension",
+      app_identifier: "app.chatapp.p2p.tinode.NSExtension",
       adhoc: true,
       skip_certificate_verification: true,
       force: true,
@@ -65,7 +65,7 @@ platform :ios do
       path: "Tinodios.xcodeproj",
       team_id: ENV["APPLE_TEAM_ID"],
       targets: ["Tinodios"],
-      bundle_identifier: "app.chatapp.p2p.calltest",
+      bundle_identifier: "app.chatapp.p2p.tinode",
       code_sign_identity: "Apple Distribution",
       profile_name: app_profile,
     )
@@ -75,7 +75,7 @@ platform :ios do
       path: "Tinodios.xcodeproj",
       team_id: ENV["APPLE_TEAM_ID"],
       targets: ["TinodiosNSExtension"],
-      bundle_identifier: "app.chatapp.p2p.calltest.NSExtension",
+      bundle_identifier: "app.chatapp.p2p.tinode.NSExtension",
       code_sign_identity: "Apple Distribution",
       profile_name: ext_profile,
     )
@@ -88,8 +88,8 @@ platform :ios do
       export_options: {
         method: "ad-hoc",
         provisioningProfiles: {
-          "app.chatapp.p2p.calltest" => app_profile,
-          "app.chatapp.p2p.calltest.NSExtension" => ext_profile,
+          "app.chatapp.p2p.tinode" => app_profile,
+          "app.chatapp.p2p.tinode.NSExtension" => ext_profile,
         },
       },
     )
