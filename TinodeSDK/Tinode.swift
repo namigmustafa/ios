@@ -1287,14 +1287,16 @@ public class Tinode {
                 return PromisedReply<ServerMessage>(value: ServerMessage())
             }
             voipToken = Tinode.isNull(obj: token) ? nil : token
+            store?.voipToken = voipToken
             let msgId = getNextMsgId()
             let msg = ClientMessage<Int, Int>(hi: MsgClientHi(id: msgId, voipdev: token))
+            // Unlike setDeviceToken, don't clear the cached token on failure: PushKit
+            // typically hands us this token at app launch, before login completes, so
+            // the very first send attempt legitimately fails with "auth required" -
+            // that's not a sign the token itself is bad. hello() resends whatever is
+            // cached on every future connect/login, so keeping it queues a natural
+            // retry instead of permanently forgetting a still-valid token.
             return sendWithPromise(payload: msg, with: msgId)
-                .thenCatch { [weak self] _ in
-                    self?.voipToken = nil
-                    self?.store?.voipToken = nil
-                    return nil
-                }
         }
     }
 
