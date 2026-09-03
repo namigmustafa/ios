@@ -323,6 +323,16 @@ extension AppDelegate: PKPushRegistryDelegate {
                 return
             }
             let audioOnly = (data["aonly"] as? Bool) ?? false
+            // The VoIP push is what wakes the app from a locked/killed state, so the
+            // Tinode socket is very likely NOT connected yet at this point - but
+            // displayIncomingCall's success path immediately sends a "ringing" event
+            // over it. Connect (and log back in with the saved token) synchronously
+            // before reporting to CallKit, so that send doesn't silently fail against
+            // a dead connection ("Connection to server lost").
+            if !Cache.tinode.isConnected {
+                Cache.log.info("PK VOIP push: not connected, connecting before reporting call")
+                _ = SharedUtils.connectAndLoginSync(using: Cache.tinode, inBackground: true)
+            }
             // Report the call to CallKit, and let it display the call UI.
             Cache.callManager.displayIncomingCall(uuid: UUID(), onTopic: topicName, originatingFrom: callerUID, withSeqId: seq, audioOnly: audioOnly, completion: { err in
                 // Tell PushKit that the notification is handled.
