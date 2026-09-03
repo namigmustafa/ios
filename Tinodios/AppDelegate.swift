@@ -288,6 +288,10 @@ extension AppDelegate: MessagingDelegate {
 extension AppDelegate: PKPushRegistryDelegate {
     func pushRegistry(_ registry: PKPushRegistry, didUpdate credentials: PKPushCredentials, for type: PKPushType) {
         Cache.log.info("PK token received %@", credentials.debugDescription)
+        // SPIKE (Phase 0): print hex token so it can be grabbed from the device log
+        // and used to manually trigger a real APNs VoIP push. Remove before Phase 2.
+        let hexToken = credentials.token.map { String(format: "%02x", $0) }.joined()
+        Cache.log.info("PK VOIP TOKEN (spike, copy this): %@", hexToken)
     }
 
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
