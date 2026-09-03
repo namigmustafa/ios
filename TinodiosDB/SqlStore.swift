@@ -26,6 +26,10 @@ public class SqlStore: Storage {
         get { self.dbh?.accountDb?.getDeviceToken() }
         set { self.dbh?.accountDb?.saveDeviceToken(token: newValue) }
     }
+    public var voipToken: String? {
+        get { self.dbh?.accountDb?.getVoipToken() }
+        set { self.dbh?.accountDb?.saveVoipToken(token: newValue) }
+    }
     var dbh: BaseDb?
     var myId: Int64 = -1
 

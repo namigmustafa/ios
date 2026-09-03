@@ -12,7 +12,7 @@ import TinodeSDK
 
 public class BaseDb {
     // Current database schema version. Increment on schema changes.
-    public static let kSchemaVersion: Int32 = 111
+    public static let kSchemaVersion: Int32 = 112
 
     // Object statuses. Values are incremented by 10 to make it easier to add new statuses.
     public enum Status: Int, Comparable {
@@ -96,12 +96,14 @@ public class BaseDb {
 
         var account: StoredAccount? = nil
         var deviceToken: String? = nil
+        var voipToken: String? = nil
         if self.db!.userVersion != BaseDb.kSchemaVersion {
             BaseDb.log.info("BaseDb - schema has changed from %d to %d", (self.db?.userVersion ?? -1), BaseDb.kSchemaVersion)
 
             // Retain active account accross DB upgrades to keep user logged in.
             account = self.accountDb!.getActiveAccount()
             deviceToken = self.accountDb!.getDeviceToken()
+            voipToken = self.accountDb!.getVoipToken()
 
             // Schema has changed, delete database.
             self.dropDb()
@@ -120,6 +122,7 @@ public class BaseDb {
         if let account = account {
             _ = self.accountDb!.addOrActivateAccount(for: account.uid, withCredMethods: account.credMethods)
             self.accountDb!.saveDeviceToken(token: deviceToken)
+            self.accountDb!.saveVoipToken(token: voipToken)
         }
         self.account = self.accountDb!.getActiveAccount()
     }

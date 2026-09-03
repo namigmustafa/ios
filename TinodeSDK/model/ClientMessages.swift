@@ -14,19 +14,26 @@ public class MsgClientHi: Codable {
     public let ua: String?
     // Push notification token.
     public let dev: String?
+    // PushKit VoIP push token (iOS only), for real APNs voip-type incoming-call pushes.
+    // Separate from `dev` because it's delivered via a direct-APNs adapter, not FCM.
+    public let voipdev: String?
     public let lang: String?
     public let bkg: Bool?
 
-    init(id: String?, ver: String?, ua: String?, dev: String?, lang: String?, background: Bool) {
+    init(id: String?, ver: String?, ua: String?, dev: String?, voipdev: String? = nil, lang: String?, background: Bool) {
         self.id = id
         self.ver = ver
         self.ua = ua
         self.dev = dev
+        self.voipdev = voipdev
         self.lang = lang
         self.bkg = background ? true : nil
     }
     convenience init(id: String, dev: String) {
         self.init(id: id, ver: nil, ua: nil, dev: dev, lang: nil, background: false)
+    }
+    convenience init(id: String, voipdev: String) {
+        self.init(id: id, ver: nil, ua: nil, dev: nil, voipdev: voipdev, lang: nil, background: false)
     }
 }
 

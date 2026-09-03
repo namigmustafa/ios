@@ -64,6 +64,9 @@ public protocol Storage: AnyObject {
 
     var deviceToken: String? { get set }
 
+    // PushKit VoIP push token (iOS only). See Tinode.voipToken.
+    var voipToken: String? { get set }
+
     func logout()
 
     func deleteAccount(_ uid: String)

@@ -30,6 +30,7 @@ public class AccountDb {
     public let active: SQLite.Expression<Int?>
     public let credMethods: SQLite.Expression<String?>
     public let deviceId: SQLite.Expression<String?>
+    public let voipDeviceId: SQLite.Expression<String?>
 
     init(_ database: SQLite.Connection) {
         self.db = database
@@ -39,6 +40,7 @@ public class AccountDb {
         self.active = Expression<Int?>("last_active")
         self.credMethods = Expression<String?>("cred_methods")
         self.deviceId = Expression<String?>("device_id")
+        self.voipDeviceId = Expression<String?>("voip_device_id")
     }
     func destroyTable() {
         try! self.db.run(self.table.dropIndex(uid, ifExists: true))
@@ -53,6 +55,7 @@ public class AccountDb {
             t.column(active)
             t.column(credMethods)
             t.column(deviceId)
+            t.column(voipDeviceId)
         })
         try! self.db.run(self.table.createIndex(uid, unique: true, ifNotExists: true))
         try! self.db.run(self.table.createIndex(active, ifNotExists: true))
@@ -142,6 +145,22 @@ public class AccountDb {
     func getDeviceToken() -> String? {
         if let row = try? db.pluck(self.table.select(self.deviceId).filter(self.active == 1)),
             let d = row[self.deviceId] {
+            return d
+        }
+        return nil
+    }
+    @discardableResult
+    func saveVoipToken(token: String?) -> Bool {
+        let record = self.table.filter(self.active == 1)
+        do {
+            return try self.db.run(record.update(self.voipDeviceId <- token)) > 0
+        } catch {
+            return false
+        }
+    }
+    func getVoipToken() -> String? {
+        if let row = try? db.pluck(self.table.select(self.voipDeviceId).filter(self.active == 1)),
+            let d = row[self.voipDeviceId] {
             return d
         }
         return nil

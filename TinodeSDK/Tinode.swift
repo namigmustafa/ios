@@ -330,6 +330,8 @@ public class Tinode {
     public var isConnectionAuthenticated = false
     public var myUid: String?
     public var deviceToken: String?
+    // PushKit VoIP push token (iOS only). See MsgClientHi.voipdev.
+    public var voipToken: String?
     public var authToken: String?
     public var authTokenExpires: Date?
     public var nameCounter = 0
@@ -399,6 +401,7 @@ public class Tinode {
         }
         self.myUid = self.store?.myUid
         self.deviceToken = self.store?.deviceToken
+        self.voipToken = self.store?.voipToken
         self.useTLS = false
         self.hostName = ""
         // self.osVersoin
@@ -688,7 +691,7 @@ public class Tinode {
 
     private func hello(inBackground bkg: Bool) -> PromisedReply<ServerMessage> {
         let msgId = getNextMsgId()
-        let msg = ClientMessage<Int, Int>(hi: MsgClientHi(id: msgId, ver: kVersion, ua: userAgent, dev: deviceToken, lang: Locale.current.identifier, background: bkg))
+        let msg = ClientMessage<Int, Int>(hi: MsgClientHi(id: msgId, ver: kVersion, ua: userAgent, dev: deviceToken, voipdev: voipToken, lang: Locale.current.identifier, background: bkg))
         return sendWithPromise(payload: msg, with: msgId)
             .thenApply({ [weak self] pkt in
                 guard let ctrl = pkt?.ctrl else {
@@ -1043,7 +1046,8 @@ public class Tinode {
         }
     }
     public func logout() {
-        // setDeviceToken is thread-safe.
+        // setDeviceToken/setVoipToken are thread-safe.
+        setVoipToken(token: Tinode.kNullValue)
         setDeviceToken(token: Tinode.kNullValue).thenFinally {
             self.disconnect()
             self.myUid = nil
@@ -1265,6 +1269,30 @@ public class Tinode {
                     // Clear cached value on failure to allow for retries.
                     self?.deviceToken = nil
                     self?.store?.deviceToken = nil
+                    return nil
+                }
+        }
+    }
+
+    /**
+     * Set PushKit VoIP push token (iOS only), used for real APNs voip-type pushes
+     * that can wake a locked/killed app to show a CallKit incoming-call UI.
+     *
+     * @param token PushKit VoIP token, hex-encoded
+     */
+    @discardableResult
+    public func setVoipToken(token: String) -> PromisedReply<ServerMessage> {
+        operationsQueue.sync {
+            guard token != voipToken else {
+                return PromisedReply<ServerMessage>(value: ServerMessage())
+            }
+            voipToken = Tinode.isNull(obj: token) ? nil : token
+            let msgId = getNextMsgId()
+            let msg = ClientMessage<Int, Int>(hi: MsgClientHi(id: msgId, voipdev: token))
+            return sendWithPromise(payload: msg, with: msgId)
+                .thenCatch { [weak self] _ in
+                    self?.voipToken = nil
+                    self?.store?.voipToken = nil
                     return nil
                 }
         }
