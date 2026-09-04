@@ -134,9 +134,16 @@ class CallManager {
 
     // Dismisses incoming call UI without displaying.
     func dismissIncomingCall(onTopic topic: String, withSeqId seq: Int) {
-        guard let call = self.callInProgress, call.topic == topic, call.seq == seq else {
+        // Match on topic only, not the exact seq: since calls are 1:1, at most one
+        // call can legitimately be shown for a given topic at a time, and requiring
+        // an exact seq match made this silently do nothing whenever a terminal VoIP
+        // push (declined/missed/etc.) raced with - or arrived slightly out of step
+        // with - the seq the currently-displayed incoming call was reported under,
+        // leaving the CallKit UI stuck on screen for a call that's already over.
+        guard let call = self.callInProgress, call.topic == topic else {
             return
         }
+        Cache.log.info("Dismissing incoming call: topic=%@, shown seq=%d, dismiss-for seq=%d", topic, call.seq, seq)
         self.completeCallInProgress(reportToSystem: true, reportToPeer: false)
     }
 }
