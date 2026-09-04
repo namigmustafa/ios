@@ -323,15 +323,22 @@ extension AppDelegate: PKPushRegistryDelegate {
                 return
             }
             let audioOnly = (data["aonly"] as? Bool) ?? false
-            // The VoIP push is what wakes the app from a locked/killed state, so the
-            // Tinode socket is very likely NOT connected yet at this point - but
-            // displayIncomingCall's success path immediately sends a "ringing" event
-            // over it. Connect (and log back in with the saved token) synchronously
-            // before reporting to CallKit, so that send doesn't silently fail against
-            // a dead connection ("Connection to server lost").
+            // Apple requires reportNewIncomingCall to be invoked essentially
+            // immediately after a VoIP push arrives - an app that's slow (or hangs)
+            // doing anything beforehand risks the system silently revoking further
+            // VoIP push delivery for the rest of the install. A prior version of
+            // this code connected+logged in *synchronously before* reporting to
+            // CallKit, which is exactly backwards. Report first; the Tinode socket
+            // is very likely not connected yet (this push is what woke the app),
+            // and displayIncomingCall's success path sends "ringing" over it, so
+            // kick off (re)connecting in parallel/non-blocking - if it's not ready
+            // by the time "ringing" tries to send, that send just fails and the
+            // call proceeds without it rather than delaying the CallKit report.
             if !Cache.tinode.isConnected {
-                Cache.log.info("PK VOIP push: not connected, connecting before reporting call")
-                _ = SharedUtils.connectAndLoginSync(using: Cache.tinode, inBackground: true)
+                DispatchQueue.global(qos: .userInitiated).async {
+                    Cache.log.info("PK VOIP push: not connected, connecting in background")
+                    _ = SharedUtils.connectAndLoginSync(using: Cache.tinode, inBackground: true)
+                }
             }
             // Report the call to CallKit, and let it display the call UI.
             Cache.callManager.displayIncomingCall(uuid: UUID(), onTopic: topicName, originatingFrom: callerUID, withSeqId: seq, audioOnly: audioOnly, completion: { err in
