@@ -134,13 +134,16 @@ class CallManager {
 
     // Dismisses incoming call UI without displaying.
     func dismissIncomingCall(onTopic topic: String, withSeqId seq: Int) {
-        // Match on topic only, not the exact seq: since calls are 1:1, at most one
-        // call can legitimately be shown for a given topic at a time, and requiring
-        // an exact seq match made this silently do nothing whenever a terminal VoIP
-        // push (declined/missed/etc.) raced with - or arrived slightly out of step
-        // with - the seq the currently-displayed incoming call was reported under,
-        // leaving the CallKit UI stuck on screen for a call that's already over.
-        guard let call = self.callInProgress, call.topic == topic else {
+        // Match topic + "seq is not stale": the caller keeps redialing on the same
+        // topic every ~15-20s while unanswered, each attempt getting a new, higher
+        // seq. An exact seq== match made a dismiss silently do nothing if it raced
+        // with the currently-shown call's own report; but matching topic ALONE (a
+        // prior attempt at this fix) went too far the other way - a *stale* dismiss
+        // for an older, already-superseded attempt could arrive after a newer
+        // "started" push is already ringing on screen, and would kill that
+        // brand-new, still-relevant incoming call. Only ever dismiss for the
+        // currently-shown attempt or a newer one, never for an older one.
+        guard let call = self.callInProgress, call.topic == topic, seq >= call.seq else {
             return
         }
         Cache.log.info("Dismissing incoming call: topic=%@, shown seq=%d, dismiss-for seq=%d", topic, call.seq, seq)
